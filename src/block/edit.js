@@ -21,17 +21,17 @@ export default function Edit({ attributes, setAttributes }) {
 
 		const url = folderLink.replace(webDavData.credentials.username,'');
 		// Der Proxy benötigt nur den relativen Pfad, nicht die ganze URL
-		const proxyUrl = `/wp-content/plugins/nextcloud-block-plugin/proxy.php?url=${encodeURIComponent( url )}`;
+		const proxyUrl = `/wp-content/plugins/nextcloud-block-plugin/proxy.php?url=${encodeURIComponent( url )}&auth=Basic `+btoa(webDavData.credentials.username+':'+webDavData.credentials.password);
 
 		const rootPath = '/';
 
-		const authorisation = window.btoa('Basis '+webDavData.credentials.username+':'+webDavData.credentials.password);
+		const authorisation = 'Basic '+ window.btoa(webDavData.credentials.username+':'+webDavData.credentials.password);
 
 		const client = createClient(
             proxyUrl,
 			{
 				headers: {
-                    authorization: authorisation
+					Authorization: authorisation
 				}
 			}
 		);
