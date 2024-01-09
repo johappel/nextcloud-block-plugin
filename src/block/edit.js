@@ -1,18 +1,26 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps } from '@wordpress/block-editor';
 import { useState, useEffect } from '@wordpress/element';
-import { createClient } from 'webdav';
-import SortableTree from '@uniweb/react-sortable-tree';
-import '@uniweb/react-sortable-tree/style.css';
+import { createClient } from 'webdav/web';
+
+import FolderTree, { testData } from 'react-folder-tree';
+import 'react-folder-tree/dist/style.css';
+
 import './editor.scss';
 import extractWebDavCredentials from './extract-webdav-credentials';
-
+import parseWebdavPropfindResponse from './propfind-to-json';
 
 export default function Edit({ attributes, setAttributes }) {
-	const [treeData, setTreeData] = useState([]);
+	const [treeData, setTreeData] = useState({
+		name: "root",
+		checked: 0.5,
+		isOpen: true,
+		children: []
+	});
 
 	useEffect(() => {
 		fetchProxyDirectoryContents(attributes.folderLink);
+
 	}, [attributes.folderLink]);
 
 	const fetchProxyDirectoryContents = async (folderLink) => {
@@ -20,61 +28,76 @@ export default function Edit({ attributes, setAttributes }) {
 		if (!webDavData) return;
 
 		const url = folderLink.replace(webDavData.credentials.username,'');
-		// Der Proxy benötigt nur den relativen Pfad, nicht die ganze URL
-		const proxyUrl = `/wp-content/plugins/nextcloud-block-plugin/proxy.php?url=${encodeURIComponent( url )}&auth=Basic `+btoa(webDavData.credentials.username+':'+webDavData.credentials.password);
-
+		const proxyUrl = `/wp-content/plugins/nextcloud-block-plugin/proxy.php?url=${encodeURIComponent(url)}&auth=Basic ` + btoa(webDavData.credentials.username + ':' + webDavData.credentials.password);
 		const rootPath = '/';
+		const auth = 'Basic ' + window.btoa(webDavData.credentials.username + ':' + webDavData.credentials.password);
 
-		const authorisation = 'Basic '+ window.btoa(webDavData.credentials.username+':'+webDavData.credentials.password);
+
+
 
 		const client = createClient(
-            proxyUrl,
+			proxyUrl,
 			{
 				headers: {
-					Authorization: authorisation
+					"authorization": auth,
 				}
 			}
 		);
 
 		try {
-			const directoryItems = await client.getDirectoryContents(rootPath);
-			const newTreeItems = directoryItems.map(item => ({
-				title: item.basename,
-				children: item.type === 'directory' ? [] : null,
-			}));
-			setTreeData(newTreeItems);
+			// Pfad zur proxy.php in Ihrem Plugin-Verzeichnis
+			const xml = await fetch(proxyUrl, {
+				method: 'PROPFIND',
+				headers: {
+					'Authorization': auth,
+					'Content-Type': 'text/xml',
+					'DEPTH': 10
+				},
+				body: `<?xml version="1.0"?>
+          <d:propfind  xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns" xmlns:nc="http://nextcloud.org/ns">
+            <d:prop>
+              <d:resourcetype />
+              <d:getlastmodified />
+              <d:getetag />
+              <oc:id />
+              <oc:fileid />
+              <oc:permissions />
+              <oc:size />
+              <oc:owner-display-name />
+              <oc:owner-id />
+            </d:prop>
+          </d:propfind>`
+			}).then(response => response.text());
+
+
+			parseWebdavPropfindResponse(xml).then(treeData => setTreeData(treeData), attributes);
+
+
+
+
 		} catch (error) {
-			console.error('Fehler beim Laden des Verzeichnisinhalts über WebDAV Client', error);
+			console.error('Fehler beim Laden des Verzeichnisinhalts über Proxy', error);
+			// ToDo: Fehlerbehandlung
 		}
 
-		// const proxyUrl = `/wp-content/plugins/nextcloud-block-plugin/proxy.php?path=${encodeURIComponent(relativePath)}&username=${encodeURIComponent(webDavData.credentials.username)}`;
-		//
-		// try {
-		// 	const response = await fetch(proxyUrl);
-		// 	const directoryItems = await response.json();
-		// 	const newTreeItems = directoryItems.map(item => ({
-		// 		title: item.basename,
-		// 		children: item.type === 'directory' ? [] : null,
-		// 	}));
-		// 	setTreeData(newTreeItems);
-		// } catch (error) {
-		// 	console.error('Fehler beim Laden des Verzeichnisinhalts über Proxy', error);
-		// 	// ToDo: Fehlerbehandlung
-		// }
+
 	};
 
 	const handleTreeChange = newTreeData => {
-		setTreeData(newTreeData);
+		//setTreeData(newTreeData);
 	};
 
+	//const onTreeStateChange = (state, event) => console.log(state, event);
+	console.log(treeData);
 	return (
 		<div {...useBlockProps()}>
-			<SortableTree
-				treeData={treeData}
-				onChange={handleTreeChange}
-				canDrag={({ node }) => !node.noDragging}
-				canDrop={({ nextParent }) => !nextParent || !nextParent.noChildren}
+			<FolderTree
+				data={ treeData }
+				//onChange={ onTreeStateChange }
+				showCheckbox={ false }
+				readOnly
 			/>
 		</div>
 	);
+
 };

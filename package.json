@@ -14,10 +14,12 @@
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start": "wp-scripts start"
 	},
-	"devDependencies": {},
 	"dependencies": {
-		"@uniweb/react-sortable-tree": "^2.9.4",
 		"@wordpress/scripts": "^26.8.0",
-		"webdav": "^5.3.1"
+		"react-folder-tree": "^5.1.1",
+		"stream": "^0.0.2",
+		"timers": "^0.1.1",
+		"webdav": "^5.3.1",
+		"xml2js": "^0.6.2"
 	}
 }
