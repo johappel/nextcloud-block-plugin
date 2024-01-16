@@ -1,6 +1,7 @@
 import xml2js from "xml2js";
 
 function buildTree(flattree) {
+
 	const data = flattree.children;
 	const rootNode = { name: "root", children: [] };
 	const pathMap = { "/": rootNode };
@@ -18,9 +19,11 @@ function buildTree(flattree) {
 					name: part,
 					type: index === pathParts.length - 1 ? item._type : 'directory',
 					url: item.url,
+					filename: item.filename,
+					filepath: item.filepath,
 					size: item.size,
-					date: item.date
-
+					date: item.date,
+					fileid: item.fileid
 				};
 				if(item._type ===  'directory'){
 					pathMap[currentPath].children = []
@@ -31,6 +34,7 @@ function buildTree(flattree) {
 			currentLevel = pathMap[currentPath];
 		});
 	});
+	console.log('rootNode',rootNode);
 	return rootNode;
 }
 
@@ -49,19 +53,22 @@ export default async function parseWebdavPropfindResponse(xml) {
 		children: []
 	};
 
-
 	const paths = {};
 
 	for (const response of result["d:multistatus"]["d:response"]) {
 		const href = response["d:href"][0].replace('/public.php/webdav/','/');
 
-		const filename = decodeURIComponent(href.substring(0, href.lastIndexOf('/')));
+		const filepath = href.substring(0, href.lastIndexOf('/')+1);
+		const filename = href.substring(href.lastIndexOf('/')+1);
+
 
 
 		const propstat = response["d:propstat"][0];
 		const status = propstat["d:status"][0];
 		if (status === 'HTTP/1.1 200 OK') {
 			const prop = propstat["d:prop"][0];
+			const fileid = prop["oc:fileid"][0];
+
 
 			const resourcetype = prop["d:resourcetype"];
 			const collection = resourcetype[0]['d:collection'];
@@ -72,20 +79,18 @@ export default async function parseWebdavPropfindResponse(xml) {
 			const child = {
 				name: decodeURIComponent(href),
 				filename: filename,
+				filepath: filepath,
 				_type: collection ? 'directory' : 'file',
 				url: href,
 				date: getlastmodified,
-				size: size
+				size: size,
+				fileid: fileid
 
 			};
-
-
 			root.children.push(child);
 		}
-
 	}
-	console.log(root);
-	 return buildTree(root);
+	return buildTree(root);
 
 
 }

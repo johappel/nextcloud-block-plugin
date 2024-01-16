@@ -2,11 +2,11 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "create-block/nextcloud-block-plugin",
-  "version": "0.1.0",
-  "title": "Nextcloud Folder",
+  "version": "3.0.1",
+  "title": "Nextcloud Verzeichnisbaum",
   "category": "widgets",
   "icon": "cloud",
-  "description": "Display a Nextcloud directory tree in a block.",
+  "description": "Beachten: Änderungen im Nextcloud Verzeichnis werden im Frontend nur nach dem erneuten Speichern dieses Beitrags dargestellt!",
   "example": {},
   "supports": {
     "html": false,
@@ -32,6 +32,33 @@
     "rootFolder": {
       "type": "string",
       "default": "/"
+    },
+    "treeData": {
+      "type": "object",
+      "default": {
+        "name": "root",
+        "children": []
+      }
+    },
+    "treeChildren": {
+      "type": "array",
+      "default": []
+    },
+    "backgroundColor": {
+      "type": "string",
+      "default": "#ffffff"
+    },
+    "margin": {
+      "type": "number",
+      "default": 20
+    },
+    "fontSize": {
+      "type": "number",
+      "default": 16
+    },
+    "invertTextColor": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

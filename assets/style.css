@@ -1,29 +1,25 @@
-/**
- * The following styles get applied both on the front of your site
- * and in the editor.
- *
- * Replace them with your own styles or remove the file completely.
- */
-
-.wp-block-create-block-nextcloud-block-plugin {
-
-	padding: 2px;
-	font-size: 14px;
-
-}
 .file-tree {
-	padding:0px;
-	margin:0px;
+	margin-top: 0px
 }
-.file-tree li.node {
+.file-tree li {
 	cursor: pointer;
 	user-select: none;
 	box-sizing: border-box;;
 	margin-top: 0px;
 	list-style: none;
+	margin-left: 0px;
 }
-.file-tree span {
-	font-family: 'Open Sans', sans-serif;
+
+.file-tree ul.node-children
+{
+	list-style: none;
+	padding-left: 0px;
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+.file-tree span.inverted-text-color {
+	/* Invertierte Farbe */
+	color: white;
 }
 
 .file-tree .node.directory::before {
@@ -37,14 +33,8 @@
 	margin-right: 16px;
 	transform: scale(1.4);
 }
-
-
 .file-tree .directory > span{
 	font-weight: bold;
-}
-.file-tree .inverted-text-color, .inverted-text-color .file::before   {
-	/* Invertierte Farbe */
-	color: white;
 }
 .file-tree .node.file{
 	margin-left: 5px;
@@ -52,6 +42,7 @@
 
 .file-tree .open .node.directory::before {
 	content: "\1F4C2";
+	color: black;
 	display: inline-block;
 	margin-right: 6px;
 }
@@ -60,7 +51,7 @@
 	max-height: 0px;
 	overflow: hidden;
 	transition: all 0.5s ease-in-out;
-	margin-left: 12px;
+	margin-left: 18px;
 }
 
 .file-tree .active {

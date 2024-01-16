@@ -21,8 +21,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var webdav_web__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! webdav/web */ "./node_modules/webdav/dist/web/index.js");
-/* harmony import */ var react_folder_tree__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! react-folder-tree */ "./node_modules/react-folder-tree/dist/react-folder-tree.bundle.js");
-/* harmony import */ var react_folder_tree__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(react_folder_tree__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_5__);
 /* harmony import */ var react_folder_tree_dist_style_css__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react-folder-tree/dist/style.css */ "./node_modules/react-folder-tree/dist/style.css");
 /* harmony import */ var _editor_scss__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./editor.scss */ "./src/block/editor.scss");
 /* harmony import */ var _extract_webdav_credentials__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./extract-webdav-credentials */ "./src/block/extract-webdav-credentials.js");
@@ -37,24 +37,30 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
 function Edit({
   attributes,
   setAttributes
 }) {
+  // Sicherstellen, dass treeData und treeData.children vorhanden sind
+  const children = attributes.treeChildren || [];
   const [treeData, setTreeData] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useState)({
     name: "root",
     checked: 0.5,
     isOpen: true,
     children: []
   });
+  const [isLoading, setIsLoading] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useState)(true);
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useEffect)(() => {
     fetchProxyDirectoryContents(attributes.folderLink);
   }, [attributes.folderLink]);
   const fetchProxyDirectoryContents = async folderLink => {
     const webDavData = (0,_extract_webdav_credentials__WEBPACK_IMPORTED_MODULE_8__["default"])(folderLink);
     if (!webDavData) return;
+    setIsLoading(true);
+    console.log(nextcloudFolder.proxyUrl);
     const url = folderLink.replace(webDavData.credentials.username, '');
-    const proxyUrl = `/wp-content/plugins/nextcloud-block-plugin/proxy.php?url=${encodeURIComponent(url)}&auth=Basic ` + btoa(webDavData.credentials.username + ':' + webDavData.credentials.password);
+    const proxyUrl = nextcloudFolder.proxyUrl + `?url=${encodeURIComponent(url)}&auth=Basic ` + btoa(webDavData.credentials.username + ':' + webDavData.credentials.password);
     const rootPath = '/';
     const auth = 'Basic ' + window.btoa(webDavData.credentials.username + ':' + webDavData.credentials.password);
     const client = (0,webdav_web__WEBPACK_IMPORTED_MODULE_4__.createClient)(proxyUrl, {
@@ -62,6 +68,7 @@ function Edit({
         "authorization": auth
       }
     });
+    let treeData;
     try {
       // Pfad zur proxy.php in Ihrem Plugin-Verzeichnis
       const xml = await fetch(proxyUrl, {
@@ -70,43 +77,114 @@ function Edit({
           'Authorization': auth,
           'Content-Type': 'text/xml',
           'DEPTH': 10
-        },
-        body: `<?xml version="1.0"?>
-          <d:propfind  xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns" xmlns:nc="http://nextcloud.org/ns">
-            <d:prop>
-              <d:resourcetype />
-              <d:getlastmodified />
-              <d:getetag />
-              <oc:id />
-              <oc:fileid />
-              <oc:permissions />
-              <oc:size />
-              <oc:owner-display-name />
-              <oc:owner-id />
-            </d:prop>
-          </d:propfind>`
+        }
       }).then(response => response.text());
-      (0,_propfind_to_json__WEBPACK_IMPORTED_MODULE_9__["default"])(xml).then(treeData => setTreeData(treeData), attributes);
+      (0,_propfind_to_json__WEBPACK_IMPORTED_MODULE_9__["default"])(xml).then(treeData => {
+        setTreeData(treeData);
+        setAttributes({
+          "treeData": treeData
+        });
+        setIsLoading(false);
+      });
     } catch (error) {
       console.error('Fehler beim Laden des Verzeichnisinhalts über Proxy', error);
       // ToDo: Fehlerbehandlung
+      setIsLoading(false);
     }
   };
-  const handleTreeChange = newTreeData => {
-    //setTreeData(newTreeData);
+  const renderTree = nodes => {
+    // Zuerst die Ordner sortieren und dann die Dateien.
+    const sortedNodes = [...nodes].sort((a, b) => {
+      if (a.type === 'directory' && b.type !== 'directory') {
+        return -1;
+      }
+      if (a.type !== 'directory' && b.type === 'directory') {
+        return 1;
+      }
+      // Wenn beide gleich sind (beides Ordner oder Dateien), nach Namen sortieren
+      return a.name.localeCompare(b.name);
+    });
+    return sortedNodes.map((node, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("li", {
+      key: index,
+      className: `node ${node.type} ${openNodes[node.fileid] ? 'open' : ''}`,
+      "data-id": node.fileid,
+      style: {
+        fontSize: `${attributes.fontSize}px`
+      }
+    }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("span", {
+      className: `${attributes.invertTextColor ? 'inverted-text-color' : ''}`,
+      "data-path": node.fileid,
+      "data-url": node.url,
+      "data-id": node.fileid,
+      onClick: () => toggleNode(node.fileid)
+    }, node.name), node.children && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("ul", {
+      className: `node-children ${openNodes[node.fileid] ? 'active' : ''}`,
+      id: `children-${node.fileid}`
+    }, renderTree(node.children))));
+  };
+  const [openNodes, setOpenNodes] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_3__.useState)({});
+  const toggleNode = nodeId => {
+    setOpenNodes(prevOpenNodes => ({
+      ...prevOpenNodes,
+      [nodeId]: !prevOpenNodes[nodeId]
+    }));
+  };
+  const toggleTextColor = () => {
+    setAttributes({
+      invertTextColor: !attributes.invertTextColor
+    });
   };
 
-  //const onTreeStateChange = (state, event) => console.log(state, event);
-  console.log(treeData);
-  return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  // // Nur rendern, wenn children vorhanden sind
+  if (attributes.treeData.children.length === 0) {
+    return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "Keine Daten verf\xFCgbar.");
+  }
+  const nodes = attributes.treeData.children || [];
+  return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.InspectorControls, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_5__.PanelBody, {
+    title: "Einstellungen",
+    initialOpen: true
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_5__.TextControl, {
+    label: "Nextcloud Freigabelink",
+    value: attributes.folderLink,
+    onChange: newLink => setAttributes({
+      folderLink: newLink
+    })
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_5__.ColorPicker, {
+    color: attributes.backgroundColor,
+    onChangeComplete: color => setAttributes({
+      backgroundColor: color.hex
+    }),
+    enableAlpha: true
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_5__.RangeControl, {
+    label: "Seitenr\xE4nder",
+    value: attributes.margin,
+    onChange: newMargin => setAttributes({
+      margin: newMargin
+    }),
+    min: 0,
+    max: 50
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_5__.RangeControl, {
+    label: "Textgr\xF6\xDFe",
+    value: attributes.fontSize,
+    onChange: newSize => setAttributes({
+      fontSize: newSize
+    }),
+    min: 10,
+    max: 30
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_5__.ToggleControl, {
+    label: "Textfarbe invertieren",
+    checked: attributes.invertTextColor,
+    onChange: toggleTextColor
+  }))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     ...(0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.useBlockProps)()
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)((react_folder_tree__WEBPACK_IMPORTED_MODULE_5___default()), {
-    data: treeData
-    //onChange={ onTreeStateChange }
-    ,
-    showCheckbox: false,
-    readOnly: true
-  }));
+  }, isLoading ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("ul", null, "Ordnerinhalte auf deiner Nextcloud ermitteln") // Hier können Sie einen detaillierteren Ladeindikator einfügen
+  : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("ul", {
+    className: `file-tree ${attributes.invertTextColor ? 'inverted-text-color' : ''}`,
+    style: {
+      backgroundColor: attributes.backgroundColor,
+      padding: `${attributes.margin}px`
+    }
+  }, renderTree(nodes))));
 }
 ;
 
@@ -232,8 +310,11 @@ function buildTree(flattree) {
           name: part,
           type: index === pathParts.length - 1 ? item._type : 'directory',
           url: item.url,
+          filename: item.filename,
+          filepath: item.filepath,
           size: item.size,
-          date: item.date
+          date: item.date,
+          fileid: item.fileid
         };
         if (item._type === 'directory') {
           pathMap[currentPath].children = [];
@@ -243,6 +324,7 @@ function buildTree(flattree) {
       currentLevel = pathMap[currentPath];
     });
   });
+  console.log('rootNode', rootNode);
   return rootNode;
 }
 
@@ -258,11 +340,13 @@ async function parseWebdavPropfindResponse(xml) {
   const paths = {};
   for (const response of result["d:multistatus"]["d:response"]) {
     const href = response["d:href"][0].replace('/public.php/webdav/', '/');
-    const filename = decodeURIComponent(href.substring(0, href.lastIndexOf('/')));
+    const filepath = href.substring(0, href.lastIndexOf('/') + 1);
+    const filename = href.substring(href.lastIndexOf('/') + 1);
     const propstat = response["d:propstat"][0];
     const status = propstat["d:status"][0];
     if (status === 'HTTP/1.1 200 OK') {
       const prop = propstat["d:prop"][0];
+      const fileid = prop["oc:fileid"][0];
       const resourcetype = prop["d:resourcetype"];
       const collection = resourcetype[0]['d:collection'];
       const getlastmodified = prop["d:getlastmodified"][0];
@@ -271,15 +355,16 @@ async function parseWebdavPropfindResponse(xml) {
       const child = {
         name: decodeURIComponent(href),
         filename: filename,
+        filepath: filepath,
         _type: collection ? 'directory' : 'file',
         url: href,
         date: getlastmodified,
-        size: size
+        size: size,
+        fileid: fileid
       };
       root.children.push(child);
     }
   }
-  console.log(root);
   return buildTree(root);
 }
 
@@ -301,27 +386,53 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/block-editor */ "@wordpress/block-editor");
 /* harmony import */ var _wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__);
 
-/**
- * React hook that is used to mark the block wrapper element.
- * It provides all the necessary props like the class name.
- *
- * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-block-editor/#useblockprops
- */
 
-
-/**
- * The save function defines the way in which the different attributes should
- * be combined into the final markup, which is then serialized by the block
- * editor into `post_content`.
- *
- * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#save
- *
- * @return {Element} Element to render.
- */
-function save() {
-  return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", {
+function save({
+  attributes
+}) {
+  const treeData = attributes.treeData;
+  const children = treeData.children || [];
+  const renderTree = nodes => {
+    // Zuerst die Ordner sortieren und dann die Dateien.
+    const sortedNodes = [...nodes].sort((a, b) => {
+      if (a.type === 'directory' && b.type !== 'directory') {
+        return -1;
+      }
+      if (a.type !== 'directory' && b.type === 'directory') {
+        return 1;
+      }
+      // Wenn beide gleich sind (beides Ordner oder Dateien), nach Namen sortieren
+      return a.name.localeCompare(b.name);
+    });
+    return sortedNodes.map((node, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("li", {
+      key: index,
+      className: `node ${node.type}`,
+      "data-id": node.fileid
+    }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("span", {
+      className: `${attributes.invertTextColor ? 'inverted-text-color' : ''}`,
+      "data-path": node.fileid,
+      "data-url": `${attributes.folderLink}/download?path=${node.filepath}&files=${node.filename}`,
+      "data-id": node.fileid
+    }, node.name), node.children && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("ul", {
+      className: "node-children nested",
+      id: `children-${node.fileid}`
+    }, renderTree(node.children))));
+  };
+  // // Nur rendern, wenn children vorhanden sind
+  if (children.length === 0) {
+    return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "Keine Daten verf\xFCgbar.");
+  }
+  return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     ..._wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__.useBlockProps.save()
-  }, 'Nextcloud Block Plugin – hello from the saved content!');
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("ul", {
+    className: `file-tree ${attributes.invertTextColor ? 'inverted-text-color' : ''}`,
+    style: {
+      backgroundColor: attributes.backgroundColor,
+      padding: `${attributes.margin}px`
+    }
+  }, renderTree(children)), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("details", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("summary", null, "Ordner Download"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "Alle Dateien in ein Zip Archiv packen und herunter laden."), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("a", {
+    href: `${attributes.folderLink}/download?path=/`
+  }, "Jetzt herunterladen")));
 }
 
 /***/ }),
@@ -3128,16 +3239,6 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 // extracted by mini-css-extract-plugin
 
-
-/***/ }),
-
-/***/ "./node_modules/react-folder-tree/dist/react-folder-tree.bundle.js":
-/*!*************************************************************************!*\
-  !*** ./node_modules/react-folder-tree/dist/react-folder-tree.bundle.js ***!
-  \*************************************************************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-!function(e,t){ true?module.exports=t(__webpack_require__(/*! react */ "react")):0}(self,(function(e){return(()=>{var t={703:(e,t,n)=>{"use strict";var r=n(414);function o(){}function a(){}a.resetWarningCache=o,e.exports=function(){function e(e,t,n,o,a,c){if(c!==r){var i=new Error("Calling PropTypes validators directly is not supported by the `prop-types` package. Use PropTypes.checkPropTypes() to call them. Read more at http://fb.me/use-check-prop-types");throw i.name="Invariant Violation",i}}function t(){return e}e.isRequired=e;var n={array:e,bool:e,func:e,number:e,object:e,string:e,symbol:e,any:e,arrayOf:t,element:e,elementType:e,instanceOf:t,node:e,objectOf:t,oneOf:t,oneOfType:t,shape:t,exact:t,checkPropTypes:a,resetWarningCache:o};return n.PropTypes=n,n}},697:(e,t,n)=>{e.exports=n(703)()},414:e=>{"use strict";e.exports="SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED"},880:(e,t,n)=>{var r;self,e.exports=(r=n(297),(()=>{"use strict";var e={297:e=>{e.exports=r}},t={};function n(r){var o=t[r];if(void 0!==o)return o.exports;var a=t[r]={exports:{}};return e[r](a,a.exports,n),a.exports}n.d=(e,t)=>{for(var r in t)n.o(t,r)&&!n.o(e,r)&&Object.defineProperty(e,r,{enumerable:!0,get:t[r]})},n.o=(e,t)=>Object.prototype.hasOwnProperty.call(e,t),n.r=e=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})};var o={};return(()=>{n.r(o),n.d(o,{default:()=>H,findAllTargetPathByProp:()=>S,findTargetNode:()=>f,findTargetPathByProp:()=>k,testData:()=>P});var e=n(297);function t(e,t){var n=Object.keys(e);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(e);t&&(r=r.filter((function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable}))),n.push.apply(n,r)}return n}function r(e){for(var n=1;n<arguments.length;n++){var r=null!=arguments[n]?arguments[n]:{};n%2?t(Object(r),!0).forEach((function(t){a(e,t,r[t])})):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(r)):t(Object(r)).forEach((function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(r,t))}))}return e}function a(e,t,n){return t in e?Object.defineProperty(e,t,{value:n,enumerable:!0,configurable:!0,writable:!0}):e[t]=n,e}function c(e){return function(e){if(Array.isArray(e))return u(e)}(e)||function(e){if("undefined"!=typeof Symbol&&null!=e[Symbol.iterator]||null!=e["@@iterator"])return Array.from(e)}(e)||l(e)||function(){throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function i(e,t){var n="undefined"!=typeof Symbol&&e[Symbol.iterator]||e["@@iterator"];if(!n){if(Array.isArray(e)||(n=l(e))||t&&e&&"number"==typeof e.length){n&&(e=n);var r=0,o=function(){};return{s:o,n:function(){return r>=e.length?{done:!0}:{done:!1,value:e[r++]}},e:function(e){throw e},f:o}}throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}var a,c=!0,i=!1;return{s:function(){n=n.call(e)},n:function(){var e=n.next();return c=e.done,e},e:function(e){i=!0,a=e},f:function(){try{c||null==n.return||n.return()}finally{if(i)throw a}}}}function l(e,t){if(e){if("string"==typeof e)return u(e,t);var n=Object.prototype.toString.call(e).slice(8,-1);return"Object"===n&&e.constructor&&(n=e.constructor.name),"Map"===n||"Set"===n?Array.from(e):"Arguments"===n||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)?u(e,t):void 0}}function u(e,t){(null==t||t>e.length)&&(t=e.length);for(var n=0,r=new Array(t);n<t;n++)r[n]=e[n];return r}var s=function(e){return JSON.parse(JSON.stringify(e))},f=function(e,t){var n,r=e,o=i(t);try{for(o.s();!(n=o.n()).done;){var a=n.value,c=r.children;if(a>=c.length||a<0)throw new Error("finding node failed: invalid path!!");r=c[a]}}catch(e){o.e(e)}finally{o.f()}return r},d=function e(t){var n=t.children,r=t._id;return n?Math.max.apply(Math,[r].concat(c(n.map(e)))):r},p=function(e){var t=0;return function e(n){n._id=t,t+=1;var r=n.children;if(r){var o,a=i(r);try{for(a.s();!(o=a.n()).done;)e(o.value)}catch(e){a.e(e)}finally{a.f()}}return n}(s(e))},h=function e(t,n){t.checked=n;var o=t.children;if(o){var a,c=i(o);try{for(c.s();!(a=c.n()).done;)e(a.value,n)}catch(e){c.e(e)}finally{c.f()}}return r({},t)},v=h,y=function e(t){if(0!==t.length){var n=t.pop();n.checked=function(e){var t=e.children;if(!(null!=t&&t.length)>0)return e.checked;var n,r=0,o=i(t);try{for(o.s();!(n=o.n()).done;)r+=n.value.checked}catch(e){o.e(e)}finally{o.f()}var a=.5;return r===t.length?a=1:0===r&&(a=0),a}(n),e(t)}},m=function(e,t,n){var o,a=e,c=[a],l=i(t);try{for(l.s();!(o=l.n()).done;){var u=o.value;a=a.children[u],c.push(a)}}catch(e){l.e(e)}finally{l.f()}return h(a,n),c.pop(),y(c),r({},e)},b=function(e,t,n){return f(e,t).name=n,r({},e)},g=function(e,t){var n=e;if(0===t.length)return n.children=[],n.checked=0,n;var o,a=[n],c=t.pop(),l=i(t);try{for(l.s();!(o=l.n()).done;){var u=o.value;n=n.children[u],a.push(n)}}catch(e){l.e(e)}finally{l.f()}return n.children.splice(c,1),y(a),r({},e)},O=function(e,t){var n=arguments.length>2&&void 0!==arguments[2]&&arguments[2],o=d(e)+1,a=f(e,t),c=a.children;if(!c)throw new Error("can't add node to a file!!");return n?c.push({_id:o,name:"new folder",checked:Math.floor(a.checked),children:[]}):c.unshift({_id:o,name:"new file",checked:Math.floor(a.checked)}),r({},e)},w=function(e,t,n){var o=f(e,t);if(!o.children)throw new Error("only parent node (folder) can be opened!!");return o.isOpen=n,r({},e)},C=function e(t,n){var o=r({},t),a=o.children;return a&&(o.isOpen=n,o.children=a.map((function(t){return e(t,n)}))),o},j=function e(t){var n=t.children,r=t.isOpen;if(n&&void 0===r)return!1;if(!n&&void 0!==r)return!1;if(n){var o,a=i(n);try{for(a.s();!(o=a.n()).done;)if(!e(o.value))return!1}catch(e){a.e(e)}finally{a.f()}}return!0},E=function(e,t){for(var n=arguments.length,r=new Array(n>2?n-2:0),o=2;o<n;o++)r[o-2]=arguments[o];return{type:e,path:t,params:r}},S=function(e,t,n){var r=[];return function e(o,a){o[t]===n&&r.push(s(a));var i=o.children;i&&i.forEach((function(t,n){return e(t,[].concat(c(a),[n]))}))}(e,[]),r},k=function(e,t,n){var r=S(e,t,n);return r.length>0?r[0]:null},P={name:"All Cryptos",children:[{name:"Bitcoin"},{name:"Etherium"},{name:"Polkadot"},{name:"POW",children:[{name:"Bitcoin"},{name:"Litecoin"},{name:"Bitcoin Cash"}]},{name:"Public Chains",children:[{name:"Ripple"},{name:"Chainlink"},{name:"POW",children:[{name:"Bitcoin"},{name:"Litecoin"},{name:"Bitcoin Cash"}]},{name:"POS",children:[{name:"Etherium"},{name:"EOS"},{name:"Crosschain",children:[{name:"Polkadot"},{name:"Cosmos"}]}]}]}]};function I(e,t){var n=Object.keys(e);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(e);t&&(r=r.filter((function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable}))),n.push.apply(n,r)}return n}function N(e,t,n){return t in e?Object.defineProperty(e,t,{value:n,enumerable:!0,configurable:!0,writable:!0}):e[t]=n,e}function x(e){return function(e){if(Array.isArray(e))return D(e)}(e)||function(e){if("undefined"!=typeof Symbol&&null!=e[Symbol.iterator]||null!=e["@@iterator"])return Array.from(e)}(e)||T(e)||function(){throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function A(e,t){return function(e){if(Array.isArray(e))return e}(e)||function(e,t){var n=e&&("undefined"!=typeof Symbol&&e[Symbol.iterator]||e["@@iterator"]);if(null!=n){var r,o,a=[],c=!0,i=!1;try{for(n=n.call(e);!(c=(r=n.next()).done)&&(a.push(r.value),!t||a.length!==t);c=!0);}catch(e){i=!0,o=e}finally{try{c||null==n.return||n.return()}finally{if(i)throw o}}return a}}(e,t)||T(e,t)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function T(e,t){if(e){if("string"==typeof e)return D(e,t);var n=Object.prototype.toString.call(e).slice(8,-1);return"Object"===n&&e.constructor&&(n=e.constructor.name),"Map"===n||"Set"===n?Array.from(e):"Arguments"===n||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)?D(e,t):void 0}}function D(e,t){(null==t||t>e.length)&&(t=e.length);for(var n=0,r=new Array(t);n<t;n++)r[n]=e[n];return r}const H=function(t){var n=t.data,r=t.onChange,o=t.options,a=void 0===o?{}:o,c=t.customReducers,i=void 0===c?{}:c,l=A((0,e.useState)(null),2),u=l[0],s=l[1],f=A((0,e.useState)({type:"initialization",path:null,params:[]}),2),d=f[0],h=f[1],y=a.initCheckedStatus,S=a.initOpenStatus;(0,e.useEffect)((function(){var e=function(e){var t=arguments.length>1&&void 0!==arguments[1]?arguments[1]:"unchecked",n=arguments.length>2&&void 0!==arguments[2]?arguments[2]:"open",r=p(e);switch(t){case"unchecked":r=v(r,0);break;case"checked":r=v(r,1)}switch(n){case"open":r=C(r,!0);break;case"closed":r=C(r,!1);break;default:j(r)||(console.log("custom open status is invalid! Fell back to all opened."),r=C(r,!0))}return r}(n,y,S);s(e)}),[n,y,S]),(0,e.useEffect)((function(){"function"==typeof r&&u&&d&&r(u,d)}),[u,d]);var k=function(e,t){return function(n){for(var r=arguments.length,o=new Array(r>1?r-1:0),a=1;a<r;a++)o[a-1]=arguments[a];var c=E.apply(void 0,[t,x(n)].concat(o)),i=e.apply(void 0,[u,x(n)].concat(o));h(c),s(i)}},P=Object.fromEntries(Object.entries(i).map((function(e){var t=A(e,2),n=t[0],r=t[1];return[n,k(r,n)]}))),T=function(e){for(var t=1;t<arguments.length;t++){var n=null!=arguments[t]?arguments[t]:{};t%2?I(Object(n),!0).forEach((function(t){N(e,t,n[t])})):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(n)):I(Object(n)).forEach((function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(n,t))}))}return e}({setTreeState:function(e){var t=E("setTreeState",null,e);h(t),s(e)},checkNode:k(m,"checkNode"),renameNode:k(b,"renameNode"),deleteNode:k(g,"deleteNode"),addNode:k(O,"addNode"),toggleOpen:k(w,"toggleOpen")},P);return{treeState:u,reducers:T}}})(),o})())},297:t=>{"use strict";t.exports=e}},n={};function r(e){var o=n[e];if(void 0!==o)return o.exports;var a=n[e]={exports:{}};return t[e](a,a.exports,r),a.exports}r.n=e=>{var t=e&&e.__esModule?()=>e.default:()=>e;return r.d(t,{a:t}),t},r.d=(e,t)=>{for(var n in t)r.o(t,n)&&!r.o(e,n)&&Object.defineProperty(e,n,{enumerable:!0,get:t[n]})},r.o=(e,t)=>Object.prototype.hasOwnProperty.call(e,t),r.r=e=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})};var o={};return(()=>{"use strict";r.r(o),r.d(o,{default:()=>W,findAllTargetPathByProp:()=>c.findAllTargetPathByProp,findTargetNode:()=>c.findTargetNode,findTargetPathByProp:()=>c.findTargetPathByProp,testData:()=>c.testData});var e=r(297),t=r.n(e),n=r(697),a=r.n(n),c=r(880),i=r.n(c),l={color:void 0,size:void 0,className:void 0,style:void 0,attr:void 0},u=t().createContext&&t().createContext(l),s=function(){return(s=Object.assign||function(e){for(var t,n=1,r=arguments.length;n<r;n++)for(var o in t=arguments[n])Object.prototype.hasOwnProperty.call(t,o)&&(e[o]=t[o]);return e}).apply(this,arguments)};function f(e){return e&&e.map((function(e,n){return t().createElement(e.tag,s({key:n},e.attr),f(e.child))}))}function d(e){return function(n){return t().createElement(p,s({attr:s({},e.attr)},n),f(e.child))}}function p(e){var n=function(n){var r,o=e.attr,a=e.size,c=e.title,i=function(e,t){var n={};for(var r in e)Object.prototype.hasOwnProperty.call(e,r)&&t.indexOf(r)<0&&(n[r]=e[r]);if(null!=e&&"function"==typeof Object.getOwnPropertySymbols){var o=0;for(r=Object.getOwnPropertySymbols(e);o<r.length;o++)t.indexOf(r[o])<0&&Object.prototype.propertyIsEnumerable.call(e,r[o])&&(n[r[o]]=e[r[o]])}return n}(e,["attr","size","title"]),l=a||n.size||"1em";return n.className&&(r=n.className),e.className&&(r=(r?r+" ":"")+e.className),t().createElement("svg",s({stroke:"currentColor",fill:"currentColor",strokeWidth:"0"},n.attr,o,i,{className:r,style:s(s({color:e.color||n.color},n.style),e.style),height:l,width:l,xmlns:"http://www.w3.org/2000/svg"}),c&&t().createElement("title",null,c),e.children)};return void 0!==u?t().createElement(u.Consumer,null,(function(e){return n(e)})):n(l)}function h(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M840.4 300H183.6c-19.7 0-30.7 20.8-18.5 35l328.4 380.8c9.4 10.9 27.5 10.9 37 0L858.9 335c12.2-14.2 1.2-35-18.5-35z"}}]})(e)}function v(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M715.8 493.5L335 165.1c-14.2-12.2-35-1.2-35 18.5v656.8c0 19.7 20.8 30.7 35 18.5l380.8-328.4c10.9-9.4 10.9-27.6 0-37z"}}]})(e)}function y(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474a32 32 0 0 0-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1.4-12.8-6.3-12.8z"}}]})(e)}function m(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"}}]})(e)}function b(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M360 184h-8c4.4 0 8-3.6 8-8v8h304v-8c0 4.4 3.6 8 8 8h-8v72h72v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80h72v-72zm504 72H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zM731.3 840H292.7l-24.2-512h487l-24.2 512z"}}]})(e)}function g(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M257.7 752c2 0 4-.2 6-.5L431.9 722c2-.4 3.9-1.3 5.3-2.8l423.9-423.9a9.96 9.96 0 0 0 0-14.1L694.9 114.9c-1.9-1.9-4.4-2.9-7.1-2.9s-5.2 1-7.1 2.9L256.8 538.8c-1.5 1.5-2.4 3.3-2.8 5.3l-29.5 168.2a33.5 33.5 0 0 0 9.4 29.8c6.6 6.4 14.9 9.9 23.8 9.9zm67.4-174.4L687.8 215l73.3 73.3-362.7 362.6-88.9 15.7 15.6-89zM880 836H144c-17.7 0-32 14.3-32 32v36c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-36c0-17.7-14.3-32-32-32z"}}]})(e)}function O(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M854.6 288.6L639.4 73.4c-6-6-14.1-9.4-22.6-9.4H192c-17.7 0-32 14.3-32 32v832c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V311.3c0-8.5-3.4-16.7-9.4-22.7zM790.2 326H602V137.8L790.2 326zm1.8 562H232V136h302v216a42 42 0 0 0 42 42h216v494zM544 472c0-4.4-3.6-8-8-8h-48c-4.4 0-8 3.6-8 8v108H372c-4.4 0-8 3.6-8 8v48c0 4.4 3.6 8 8 8h108v108c0 4.4 3.6 8 8 8h48c4.4 0 8-3.6 8-8V644h108c4.4 0 8-3.6 8-8v-48c0-4.4-3.6-8-8-8H544V472z"}}]})(e)}function w(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M854.6 288.6L639.4 73.4c-6-6-14.1-9.4-22.6-9.4H192c-17.7 0-32 14.3-32 32v832c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V311.3c0-8.5-3.4-16.7-9.4-22.7zM790.2 326H602V137.8L790.2 326zm1.8 562H232V136h302v216a42 42 0 0 0 42 42h216v494z"}}]})(e)}function C(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M484 443.1V528h-84.5c-4.1 0-7.5 3.1-7.5 7v42c0 3.8 3.4 7 7.5 7H484v84.9c0 3.9 3.2 7.1 7 7.1h42c3.9 0 7-3.2 7-7.1V584h84.5c4.1 0 7.5-3.2 7.5-7v-42c0-3.9-3.4-7-7.5-7H540v-84.9c0-3.9-3.1-7.1-7-7.1h-42c-3.8 0-7 3.2-7 7.1zm396-144.7H521L403.7 186.2a8.15 8.15 0 0 0-5.5-2.2H144c-17.7 0-32 14.3-32 32v592c0 17.7 14.3 32 32 32h736c17.7 0 32-14.3 32-32V330.4c0-17.7-14.3-32-32-32zM840 768H184V256h188.5l119.6 114.4H840V768z"}}]})(e)}function j(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M928 444H820V330.4c0-17.7-14.3-32-32-32H473L355.7 186.2a8.15 8.15 0 0 0-5.5-2.2H96c-17.7 0-32 14.3-32 32v592c0 17.7 14.3 32 32 32h698c13 0 24.8-7.9 29.7-20l134-332c1.5-3.8 2.3-7.9 2.3-12 0-17.7-14.3-32-32-32zM136 256h188.5l119.6 114.4H748V444H238c-13 0-24.8 7.9-29.7 20L136 643.2V256zm635.3 512H159l103.3-256h612.4L771.3 768z"}}]})(e)}function E(e){return d({tag:"svg",attr:{viewBox:"0 0 1024 1024"},child:[{tag:"path",attr:{d:"M880 298.4H521L403.7 186.2a8.15 8.15 0 0 0-5.5-2.2H144c-17.7 0-32 14.3-32 32v592c0 17.7 14.3 32 32 32h736c17.7 0 32-14.3 32-32V330.4c0-17.7-14.3-32-32-32zM840 768H184V256h188.5l119.6 114.4H840V768z"}}]})(e)}var S=function(n){var r=n.status,o=n.onChange,a=1===r,c=.5===r,i=(0,e.useRef)(null);return(0,e.useLayoutEffect)((function(){var e=null==i?void 0:i.current;e&&(e.indeterminate=c)})),t().createElement("div",{className:"CheckBox"},t().createElement("input",{className:"checkboxDOM",type:"checkbox",checked:a,onChange:o,ref:i}))};S.propTypes={status:a().number.isRequired,onChange:a().func.isRequired};const k=S,P=(0,e.createContext)(null);var I=function(e){return"iconContainer ".concat(e)},N=function(e){return"icon ".concat(e)},x=function(e){return function(n){var r=n.className,o=n.onClick;return t().createElement(e,{className:r,onClick:o})}};function A(e,t){(null==t||t>e.length)&&(t=e.length);for(var n=0,r=new Array(t);n<t;n++)r[n]=e[n];return r}var T=function(n){var r,o,a=n.isEditing,c=n.setIsEditing,i=n.onNameChange,l=n.OKIcon,u=n.CancelIcon,s=n.nodeData,f=s.name,d=(r=(0,e.useState)(f),o=2,function(e){if(Array.isArray(e))return e}(r)||function(e,t){var n=e&&("undefined"!=typeof Symbol&&e[Symbol.iterator]||e["@@iterator"]);if(null!=n){var r,o,a=[],c=!0,i=!1;try{for(n=n.call(e);!(c=(r=n.next()).done)&&(a.push(r.value),!t||a.length!==t);c=!0);}catch(e){i=!0,o=e}finally{try{c||null==n.return||n.return()}finally{if(i)throw o}}return a}}(r,o)||function(e,t){if(e){if("string"==typeof e)return A(e,t);var n=Object.prototype.toString.call(e).slice(8,-1);return"Object"===n&&e.constructor&&(n=e.constructor.name),"Map"===n||"Set"===n?Array.from(e):"Arguments"===n||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)?A(e,t):void 0}}(r,o)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()),p=d[0],h=d[1],v=t().createElement("span",{className:"editingName"},t().createElement("input",{type:"text",value:p,onChange:function(e){return h(e.target.value)}}),t().createElement("span",{className:I("editableNameToolbar")},t().createElement(l,{className:N("OKIcon"),onClick:function(){i(p),c(!1)},nodeData:s}),t().createElement(u,{className:N("CancelIcon"),onClick:function(){h(f),c(!1)},nodeData:s}))),y=t().createElement("span",{className:"displayName"},f);return t().createElement("span",{className:"EditableName"},a?v:y)};T.propTypes={isEditing:a().bool.isRequired,setIsEditing:a().func.isRequired,onNameChange:a().func.isRequired,OKIcon:a().func.isRequired,CancelIcon:a().func.isRequired,nodeData:a().object.isRequired};const D=T;var H=["path","name","checked","isOpen","children"];function M(){return(M=Object.assign||function(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var r in n)Object.prototype.hasOwnProperty.call(n,r)&&(e[r]=n[r])}return e}).apply(this,arguments)}function z(e,t){return function(e){if(Array.isArray(e))return e}(e)||function(e,t){var n=e&&("undefined"!=typeof Symbol&&e[Symbol.iterator]||e["@@iterator"]);if(null!=n){var r,o,a=[],c=!0,i=!1;try{for(n=n.call(e);!(c=(r=n.next()).done)&&(a.push(r.value),!t||a.length!==t);c=!0);}catch(e){i=!0,o=e}finally{try{c||null==n.return||n.return()}finally{if(i)throw o}}return a}}(e,t)||B(e,t)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function B(e,t){if(e){if("string"==typeof e)return L(e,t);var n=Object.prototype.toString.call(e).slice(8,-1);return"Object"===n&&e.constructor&&(n=e.constructor.name),"Map"===n||"Set"===n?Array.from(e):"Arguments"===n||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)?L(e,t):void 0}}function L(e,t){(null==t||t>e.length)&&(t=e.length);for(var n=0,r=new Array(t);n<t;n++)r[n]=e[n];return r}function R(e,t){var n=Object.keys(e);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(e);t&&(r=r.filter((function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable}))),n.push.apply(n,r)}return n}function F(e,t,n){return t in e?Object.defineProperty(e,t,{value:n,enumerable:!0,configurable:!0,writable:!0}):e[t]=n,e}var _=function n(r){var o=r.path,a=r.name,c=r.checked,i=r.isOpen,l=r.children,u=function(e,t){if(null==e)return{};var n,r,o=function(e,t){if(null==e)return{};var n,r,o={},a=Object.keys(e);for(r=0;r<a.length;r++)n=a[r],t.indexOf(n)>=0||(o[n]=e[n]);return o}(e,t);if(Object.getOwnPropertySymbols){var a=Object.getOwnPropertySymbols(e);for(r=0;r<a.length;r++)n=a[r],t.indexOf(n)>=0||Object.prototype.propertyIsEnumerable.call(e,n)&&(o[n]=e[n])}return o}(r,H),s=function(e){for(var t=1;t<arguments.length;t++){var n=null!=arguments[t]?arguments[t]:{};t%2?R(Object(n),!0).forEach((function(t){F(e,t,n[t])})):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(n)):R(Object(n)).forEach((function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(n,t))}))}return e}({path:o,name:a,checked:c,isOpen:i},u),f=(0,e.useContext)(P),d=f.handleCheck,p=f.handleRename,S=f.handleDelete,A=f.handleAddNode,T=f.handleToggleOpen,_=f.iconComponents,V=f.indentPixels,q=f.onNameClick,U=f.showCheckbox,W=f.readOnly,K=!!l,$={marginLeft:o.length*V},J=z((0,e.useState)(!1),2),Y=J[0],G=J[1],Q=z((0,e.useState)(!1),2),X=Q[0],Z=Q[1],ee=_.FileIcon,te=void 0===ee?x(w):ee,ne=_.FolderIcon,re=void 0===ne?x(E):ne,oe=_.FolderOpenIcon,ae=void 0===oe?x(j):oe,ce=_.EditIcon,ie=void 0===ce?x(g):ce,le=_.DeleteIcon,ue=void 0===le?x(b):le,se=_.CancelIcon,fe=void 0===se?x(m):se,de=_.AddFileIcon,pe=void 0===de?x(O):de,he=_.AddFolderIcon,ve=void 0===he?x(C):he,ye=_.CaretRightIcon,me=void 0===ye?x(v):ye,be=_.CaretDownIcon,ge=void 0===be?x(h):be,Oe=_.OKIcon,we=void 0===Oe?x(y):Oe,Ce=te,je="FileIcon";K&&(Ce=i?ae:re,je=i?"FolderOpenIcon":"FolderIcon");var Ee=function(){return!X&&!W&&G(!0)},Se=t().createElement("span",{className:I("TreeNodeToolBar")},t().createElement(ie,{className:N("EditIcon"),onClick:function(){Z(!0),G(!1)},nodeData:s}),t().createElement(ue,{className:N("DeleteIcon"),onClick:function(){return S(o)},nodeData:s}),K&&t().createElement(t().Fragment,null,t().createElement(pe,{className:N("AddFileIcon"),onClick:function(){return A(o,!1)},nodeData:s}),t().createElement(ve,{className:N("AddFolderIcon"),onClick:function(){return A(o,!0)},nodeData:s})),t().createElement(fe,{className:N("CancelIcon"),onClick:function(){return G(!1)},nodeData:s})),ke=t().createElement("span",{className:I("caretContainer")},i?t().createElement(ge,{className:N("CaretDownIcon"),onClick:function(){return T(o,!1)},nodeData:s}):t().createElement(me,{className:N("CaretRightIcon"),onClick:function(){return T(o,!0)},nodeData:s}));return t().createElement(t().Fragment,null,t().createElement("div",{className:"TreeNode",style:$},U&&t().createElement(k,{status:c,onChange:function(e){if(!W){var t=+e.target.checked;d(o,t)}}}),K&&ke,t().createElement("span",{className:I("typeIconContainer")},t().createElement(Ce,{className:N(je),onClick:Ee,nodeData:s})),t().createElement("span",{className:I("editableNameContainer"),onClick:function(){var e=Ee;q&&"function"==typeof q?!X&&q({defaultOnClick:e,nodeData:s}):e()}},t().createElement(D,{isEditing:X,setIsEditing:Z,onNameChange:function(e){return p(o,e)},OKIcon:we,CancelIcon:fe,nodeData:s})),Y&&Se),K&&i&&l.map((function(e,r){return t().createElement(n,M({key:e._id,path:[].concat((a=o,function(e){if(Array.isArray(e))return L(e)}(a)||function(e){if("undefined"!=typeof Symbol&&null!=e[Symbol.iterator]||null!=e["@@iterator"])return Array.from(e)}(a)||B(a)||function(){throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()),[r])},e));var a})))};_.propTypes={path:a().array.isRequired,name:a().string.isRequired,checked:a().number.isRequired,isOpen:a().bool,children:a().array};const V=_;function q(){return(q=Object.assign||function(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var r in n)Object.prototype.hasOwnProperty.call(n,r)&&(e[r]=n[r])}return e}).apply(this,arguments)}var U=function(e){var n=e.data,r=e.onChange,o=void 0===r?console.log:r,a=e.initCheckedStatus,c=void 0===a?"unchecked":a,l=e.initOpenStatus,u=void 0===l?"open":l,s=e.iconComponents,f=void 0===s?{}:s,d=e.showCheckbox,p=void 0===d||d,h=e.indentPixels,v=void 0===h?30:h,y=e.onNameClick,m=void 0===y?null:y,b=e.readOnly,g=void 0!==b&&b,O={initCheckedStatus:c,initOpenStatus:u},w=i()({data:n,options:O,onChange:o}),C=w.treeState,j=w.reducers,E=j.checkNode,S=j.renameNode,k=j.deleteNode,I=j.addNode,N=j.toggleOpen;if(!C)return null;var x={handleCheck:E,handleRename:S,handleDelete:k,handleAddNode:I,handleToggleOpen:N,onNameClick:m,iconComponents:f,indentPixels:v,showCheckbox:p,readOnly:g};return t().createElement("div",{className:"FolderTree"},t().createElement(P.Provider,{value:x},t().createElement(V,q({key:C._id,path:[]},C))))};U.propTypes={data:a().object.isRequired,onChange:a().func,initCheckedStatus:a().string,initOpenStatus:a().string,iconComponents:a().shape({FileIcon:a().func,FolderIcon:a().func,FolderOpenIcon:a().func,EditIcon:a().func,DeleteIcon:a().func,CancelIcon:a().func,AddFileIcon:a().func,AddFolderIcon:a().func,CaretRightIcon:a().func,CaretDownIcon:a().func}),indentPixels:a().number,onNameClick:a().func,showCheckbox:a().bool,readOnly:a().bool};const W=U})(),o})()}));
 
 /***/ }),
 
@@ -10488,6 +10589,17 @@ module.exports = window["wp"]["blocks"];
 
 /***/ }),
 
+/***/ "@wordpress/components":
+/*!************************************!*\
+  !*** external ["wp","components"] ***!
+  \************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = window["wp"]["components"];
+
+/***/ }),
+
 /***/ "@wordpress/element":
 /*!*********************************!*\
   !*** external ["wp","element"] ***!
@@ -10542,7 +10654,7 @@ var t={584:t=>{function e(t,e,o){t instanceof RegExp&&(t=r(t,o)),e instanceof Re
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"create-block/nextcloud-block-plugin","version":"0.1.0","title":"Nextcloud Folder","category":"widgets","icon":"cloud","description":"Display a Nextcloud directory tree in a block.","example":{},"supports":{"html":false,"anchor":true},"textdomain":"nextcloud-block-plugin","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","viewScript":"file:./view.js","attributes":{"folderLink":{"type":"string","source":"attribute","selector":"div","attribute":"data-folder-link","default":"https://cloud.rpi-virtuell.de/index.php/s/GzXnLEDLxidtcyD"},"proxyurl":{"type":"string","default":"https://proxy.rpi-virtuell.de/webdav/"},"rootFolder":{"type":"string","default":"/"}}}');
+module.exports = JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"create-block/nextcloud-block-plugin","version":"3.0.1","title":"Nextcloud Verzeichnisbaum","category":"widgets","icon":"cloud","description":"Beachten: Änderungen im Nextcloud Verzeichnis werden im Frontend nur nach dem erneuten Speichern dieses Beitrags dargestellt!","example":{},"supports":{"html":false,"anchor":true},"textdomain":"nextcloud-block-plugin","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","viewScript":"file:./view.js","attributes":{"folderLink":{"type":"string","source":"attribute","selector":"div","attribute":"data-folder-link","default":"https://cloud.rpi-virtuell.de/index.php/s/GzXnLEDLxidtcyD"},"proxyurl":{"type":"string","default":"https://proxy.rpi-virtuell.de/webdav/"},"rootFolder":{"type":"string","default":"/"},"treeData":{"type":"object","default":{"name":"root","children":[]}},"treeChildren":{"type":"array","default":[]},"backgroundColor":{"type":"string","default":"#ffffff"},"margin":{"type":"number","default":20},"fontSize":{"type":"number","default":16},"invertTextColor":{"type":"boolean","default":false}}}');
 
 /***/ })
 

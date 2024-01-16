@@ -1,6 +1,7 @@
 /*!*********************************************************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./src/block/style.scss ***!
   \*********************************************************************************************************************************************************************************************************************************************/
+@charset "UTF-8";
 /**
  * The following styles get applied both on the front of your site
  * and in the editor.
@@ -8,9 +9,71 @@
  * Replace them with your own styles or remove the file completely.
  */
 .wp-block-create-block-nextcloud-block-plugin {
-  background-color: #21759b;
-  color: #fff;
   padding: 2px;
+  font-size: 14px;
+}
+
+.file-tree {
+  padding: 0px;
+  margin: 0px;
+}
+
+.file-tree li.node {
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  box-sizing: border-box;
+  margin-top: 0px;
+  list-style: none;
+}
+
+.file-tree span {
+  font-family: "Open Sans", sans-serif;
+}
+
+.file-tree .node.directory::before {
+  content: "📁";
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.file-tree .node.file::before {
+  content: "🗎";
+  display: inline-block;
+  margin-right: 16px;
+  transform: scale(1.4);
+}
+
+.file-tree .directory > span {
+  font-weight: bold;
+}
+
+.file-tree .inverted-text-color, .inverted-text-color .file::before {
+  /* Invertierte Farbe */
+  color: white;
+}
+
+.file-tree .node.file {
+  margin-left: 5px;
+}
+
+.file-tree .open .node.directory::before {
+  content: "📂";
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.file-tree .node-children {
+  display: block;
+  max-height: 0px;
+  overflow: hidden;
+  transition: all 0.5s ease-in-out;
+  margin-left: 12px;
+}
+
+.file-tree .active {
+  max-height: 1000px;
 }
 /*!***************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[2].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[2].use[2]!./node_modules/react-folder-tree/dist/style.css ***!
