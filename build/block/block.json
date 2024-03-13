@@ -23,7 +23,7 @@
       "source": "attribute",
       "selector": "div",
       "attribute": "data-folder-link",
-      "default": "https://cloud.rpi-virtuell.de/index.php/s/GzXnLEDLxidtcyD"
+      "default": "https://cloud.rpi-virtuell.de/s/JYdrHGkLxHAAiTc"
     },
     "proxyurl": {
       "type": "string",

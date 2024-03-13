@@ -1,2 +1,85 @@
-.wp-block-create-block-nextcloud-block-plugin{font-size:14px;padding:2px}.file-tree{margin:0;padding:0}.file-tree li.node{box-sizing:border-box;cursor:pointer;list-style:none;margin-top:0;-webkit-user-select:none;-moz-user-select:none;user-select:none}.file-tree span{font-family:Open Sans,sans-serif}.file-tree .node.directory:before{content:"📁";display:inline-block;margin-right:6px}.file-tree .node.file:before{content:"🗎";display:inline-block;margin-right:16px;transform:scale(1.4)}.file-tree .directory>span{font-weight:700}.file-tree .inverted-text-color,.inverted-text-color .file:before{color:#fff}.file-tree .node.file{margin-left:5px}.file-tree .open .node.directory:before{content:"📂";display:inline-block;margin-right:6px}.file-tree .node-children{display:block;margin-left:12px;max-height:0;overflow:hidden;transition:all .5s ease-in-out}.file-tree .active{max-height:1000px}
-.FolderTree .CheckBox{display:inline-block;margin-right:3px}.FolderTree .TreeNode{padding:2px 0}.FolderTree .TreeNode .TreeNodeToolBar{margin-left:3px}.FolderTree .TreeNode .TreeNodeToolBar svg,.FolderTree .TreeNode .iconContainer{padding:0 2px}.FolderTree .TreeNode .iconContainer svg{padding-top:1px;vertical-align:text-top}.FolderTree .TreeNode .iconContainer:not(.typeIconContainer) svg:hover{cursor:pointer}.FolderTree .EditableName .displayName:hover{color:#4d94ff;cursor:pointer}.FolderTree .EditableName .editableNameToolbar{margin-left:3px}.FolderTree .EditableName .editableNameToolbar svg{margin:0 2px}.FolderTree .icon:hover.OKIcon{color:#5cd65c}.FolderTree .icon:hover.CancelIcon{color:#f33}.FolderTree .icon:hover.EditIcon{color:#b3f}.FolderTree .icon:hover.DeleteIcon{color:#ff66b3}.FolderTree .icon:hover.AddFileIcon,.FolderTree .icon:hover.AddFolderIcon{color:#009973}
+/*!*********************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./src/block/style.scss ***!
+  \*********************************************************************************************************************************************************************************************************************************************/
+@charset "UTF-8";
+/**
+ * The following styles get applied both on the front of your site
+ * and in the editor.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+.wp-block-create-block-nextcloud-block-plugin {
+  padding: 2px;
+  font-size: 14px;
+}
+
+.file-tree {
+  padding: 0px;
+  margin: 0px;
+}
+
+.file-tree li.node {
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  box-sizing: border-box;
+  margin-top: 0px;
+  list-style: none;
+}
+
+.file-tree span {
+  font-family: "Open Sans", sans-serif;
+}
+
+.file-tree .node.directory::before {
+  content: "📁";
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.file-tree .node.file::before {
+  content: "🗎";
+  display: inline-block;
+  margin-right: 16px;
+  transform: scale(1.4);
+}
+
+.file-tree .directory > span {
+  font-weight: bold;
+}
+
+.file-tree .inverted-text-color, .inverted-text-color .file::before {
+  /* Invertierte Farbe */
+  color: white;
+}
+
+.file-tree .node.file {
+  margin-left: 5px;
+}
+
+.file-tree .open .node.directory::before {
+  content: "📂";
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.file-tree .node-children {
+  display: block;
+  max-height: 0px;
+  overflow: hidden;
+  transition: all 0.5s ease-in-out;
+  margin-left: 12px;
+}
+
+.file-tree .active {
+  max-height: 1000px;
+}
+/*!***************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[2].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[2].use[2]!./node_modules/react-folder-tree/dist/style.css ***!
+  \***************************************************************************************************************************************************************************************************/
+.FolderTree .CheckBox{display:inline-block;margin-right:3px}.FolderTree .TreeNode{padding:2px 0}.FolderTree .TreeNode .TreeNodeToolBar{margin-left:3px}.FolderTree .TreeNode .TreeNodeToolBar svg{padding:0 2px}.FolderTree .TreeNode .iconContainer{padding:0 2px}.FolderTree .TreeNode .iconContainer svg{padding-top:1px;vertical-align:text-top}.FolderTree .TreeNode .iconContainer:not(.typeIconContainer) svg:hover{cursor:pointer}.FolderTree .EditableName .displayName:hover{color:#4d94ff;cursor:pointer}.FolderTree .EditableName .editableNameToolbar{margin-left:3px}.FolderTree .EditableName .editableNameToolbar svg{margin:0 2px}.FolderTree .icon:hover.OKIcon{color:#5cd65c}.FolderTree .icon:hover.CancelIcon{color:#f33}.FolderTree .icon:hover.EditIcon{color:#b3f}.FolderTree .icon:hover.DeleteIcon{color:#ff66b3}.FolderTree .icon:hover.AddFileIcon{color:#009973}.FolderTree .icon:hover.AddFolderIcon{color:#009973}
+
+
+
+/*# sourceMappingURL=style-index.css.map*/
