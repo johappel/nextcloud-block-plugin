@@ -50,4 +50,9 @@ if($method === "PROPFIND") {
 		\GuzzleHttp\RequestOptions::HEADERS => $headers
 	]);
 }
-echo $response->getBody();
+if($response->getStatusCode() != 200){
+	echo "Gültige Nextcloud URL eingeben";
+}else{
+	echo $response->getBody();
+}
+
