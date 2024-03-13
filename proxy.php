@@ -40,19 +40,24 @@ XML;
 
 
 $client = new GuzzleHttp\Client;
-if($method === "PROPFIND") {
-	$response = $client->request($method, $curlurl, [
-		\GuzzleHttp\RequestOptions::HEADERS => $headers,
-		\GuzzleHttp\RequestOptions::BODY => $body
-	]);
-}else{
-	$response = $client->request($method, $curlurl, [
-		\GuzzleHttp\RequestOptions::HEADERS => $headers
-	]);
-}
-if($response->getStatusCode() != 200){
-	echo "Gültige Nextcloud URL eingeben";
-}else{
-	echo $response->getBody();
+
+try{
+	if($method === "PROPFIND") {
+		$response = $client->request($method, $curlurl, [
+			\GuzzleHttp\RequestOptions::HEADERS => $headers,
+			\GuzzleHttp\RequestOptions::BODY => $body
+		]);
+	}else{
+		$response = $client->request($method, $curlurl, [
+			\GuzzleHttp\RequestOptions::HEADERS => $headers
+		]);
+	}
+	if($response->getStatusCode() != 200){
+		echo "ERROR";
+	}else{
+		echo $response->getBody();
+	}
+}catch (Exception $e) {
+	echo "ERROR";
 }
 

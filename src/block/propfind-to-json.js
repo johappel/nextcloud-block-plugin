@@ -46,12 +46,16 @@ function buildTree(flattree) {
 
 export default async function parseWebdavPropfindResponse(xml) {
 
-	const parser = new xml2js.Parser();
-	const result = await parser.parseStringPromise(xml);
 	const root = {
 		name: 'root',
 		children: []
 	};
+	if(xml==='ERROR'){
+		return root;
+	}
+	const parser = new xml2js.Parser();
+	const result = await parser.parseStringPromise(xml);
+
 
 	const paths = {};
 
