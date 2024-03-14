@@ -53,10 +53,10 @@ try{
 		]);
 	}
 	if($response->getStatusCode() != 200){
-		echo "ERROR";
-	}else{
-		echo $response->getBody();
+//		echo "ERROR";
 	}
+	echo $response->getBody();
+
 }catch (Exception $e) {
 	echo "ERROR";
 }

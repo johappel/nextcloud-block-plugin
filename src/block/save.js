@@ -2,6 +2,9 @@ import { useBlockProps } from '@wordpress/block-editor';
 
 
 export default function save({ attributes }) {
+
+	console.log('function save attributes',attributes.folderLink);
+
 	const treeData=attributes.treeData;
 	const children = treeData.children || [];
 	const renderTree = (nodes) => {

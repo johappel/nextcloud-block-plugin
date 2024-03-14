@@ -20,10 +20,7 @@
 	"attributes": {
 		"folderLink": {
 			"type": "string",
-			"source": "attribute",
-			"selector": "div",
-			"attribute": "data-folder-link",
-			"default": "https://cloud.example.it/s/share"
+			"default": ""
 		},
 		"rootFolder": {
 			"type": "string",

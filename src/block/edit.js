@@ -23,7 +23,8 @@ export default function Edit({ attributes, setAttributes }) {
 	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
-		fetchProxyDirectoryContents(attributes.folderLink);
+	 	fetchProxyDirectoryContents(attributes.folderLink);
+
 
 	}, [attributes.folderLink]);
 
@@ -67,6 +68,7 @@ export default function Edit({ attributes, setAttributes }) {
 
 				setTreeData(treeData);
 				setAttributes({ "treeData": treeData });
+				setAttributes({ folderLink: folderLink });
 				setIsLoading(false);
 			});
 
@@ -127,9 +129,18 @@ export default function Edit({ attributes, setAttributes }) {
 	};
 
 	// // Nur rendern, wenn children vorhanden sind
-	if (attributes.treeData.children.length === 0) {
-		return <p>Keine Daten verfügbar.</p>;
-	}
+	// if (attributes.treeData.children.length === 0) {
+	// 	attributes.treeData.children.push({
+	// 		"name": "keine Dateien gefunden",
+	// 		"type": "file",
+	// 		"url": "#",
+	// 		"filename": "null",
+	// 		"filepath": "/",
+	// 		"size": 0,
+	// 		"date": "",
+	// 		"fileid": "0"
+	// 	});
+	// }
 
 	const nodes = attributes.treeData.children || [];
 	return (
@@ -181,9 +192,9 @@ export default function Edit({ attributes, setAttributes }) {
 				{isLoading ? (
 					<ul>Ordnerinhalte auf deiner Nextcloud ermitteln</ul> // Hier können Sie einen detaillierteren Ladeindikator einfügen
 				) : (
-				<ul className={`file-tree ${attributes.invertTextColor ? 'inverted-text-color' : ''}`} style={{ backgroundColor: attributes.backgroundColor, padding: `${attributes.margin}px`}}>
-					{renderTree(nodes)}
-				</ul>
+					<ul className={`file-tree ${attributes.invertTextColor ? 'inverted-text-color' : ''}`} style={{ backgroundColor: attributes.backgroundColor, padding: `${attributes.margin}px`}}>
+						{renderTree(nodes)}
+					</ul>
 				)}
 			</div>
 		</>
