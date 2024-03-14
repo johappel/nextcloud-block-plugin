@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Nextcloud Block Plugin
- * Plugin URI: http://example.com/plugins/nextcloud-block-plugin
+ * Plugin URI: https://github.com/johappel/nextcloud-block-plugin
  * Description: Integrate Nextcloud directories as blocks in WordPress and display them as a tree structure.
- * Version: 1.0
- * Author: WP Plugin Lab
- * Author URI: http://comenius.de
+ * Version: 0.0.1
+ * Author: Joachim Happel
+ * Author URI: https://comenius.de/person/joachim-happel/
  * License: GPLv2 or later
  * Text Domain: nextcloud-block-plugin
  */
