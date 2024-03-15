@@ -22,6 +22,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"folderhash": {
+			"type": "string",
+			"default": ""
+		},
 		"rootFolder": {
 			"type": "string",
 			"default": "/"

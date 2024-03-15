@@ -1,7 +1,6 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps } from '@wordpress/block-editor';
 import { useState, useEffect } from '@wordpress/element';
-import { createClient } from 'webdav/web';
 
 import { InspectorControls } from '@wordpress/block-editor';
 import { PanelBody, TextControl, ColorPicker, RangeControl,ToggleControl  } from '@wordpress/components';
@@ -41,15 +40,6 @@ export default function Edit({ attributes, setAttributes }) {
 		const rootPath = '/';
 		const auth = 'Basic ' + window.btoa(webDavData.credentials.username + ':' + webDavData.credentials.password);
 
-		const client = createClient(
-			proxyUrl,
-			{
-				headers: {
-					"authorization": auth,
-				}
-			}
-		);
-
 		let treeData;
 
 		try {
@@ -62,10 +52,8 @@ export default function Edit({ attributes, setAttributes }) {
 					'DEPTH': 10
 				}
 			}).then(response => response.text());
-
-
+			setAttributes({ folderhash	: md5(xml) });
 			parseWebdavPropfindResponse(xml).then(treeData => {
-
 				setTreeData(treeData);
 				setAttributes({ "treeData": treeData });
 				setAttributes({ folderLink: folderLink });

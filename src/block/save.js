@@ -41,11 +41,13 @@ export default function save({ attributes }) {
 	}
 
 	return (
-		<div {...useBlockProps.save()}>
-			<ul className={`file-tree ${attributes.invertTextColor ? 'inverted-text-color' : ''}`}
-				style={{ backgroundColor: attributes.backgroundColor,padding: `${attributes.margin}px`}}>
-				{renderTree(children)}
-			</ul>
+		<div {...useBlockProps.save()} data-link={`${attributes.folderLink}`} folderhash={`${attributes.folderhash}`}>
+			<div className="file-tree-wrapper">
+				<ul className={`file-tree ${attributes.invertTextColor ? 'inverted-text-color' : ''}`}
+					style={{ backgroundColor: attributes.backgroundColor,padding: `${attributes.margin}px`}}>
+					{renderTree(children)}
+				</ul>
+			</div>
 			<details>
 				<summary>Ordner Download</summary>
 				<p>Alle Dateien in ein Zip Archiv packen und herunter laden.</p>

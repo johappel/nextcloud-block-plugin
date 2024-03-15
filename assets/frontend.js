@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+	wp_block_create_block_nextcloud_block_plugin_init();
+});
+function wp_block_create_block_nextcloud_block_plugin_init() {
 	const links = document.querySelectorAll('.file-tree .file span');
 	links.forEach(link => {
 		link.addEventListener('click', function(event) {
@@ -20,4 +23,4 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 		});
 	});
-});
+}
