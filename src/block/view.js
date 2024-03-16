@@ -40,7 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		});
 	};
 
-
 	const syncTree = (Element) => {
 		let folderLink = Element.getAttribute('data-link');
 		let folderhash = Element.getAttribute('folderhash');
@@ -50,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		fetchDirectoryTree(folderLink,folderhash,Element);
 
 	}
-	const renderTree = (nodes,styleAttr,inverted, nested = false,dataId=0) => {
+	const renderTree = (nodes,folderLink,styleAttr,inverted, nested = false,dataId=0) => {
 		let invertedTextColor = '';
 		if(inverted){
 			invertedTextColor = 'inverted-text-color';
@@ -60,8 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
 			styleAttr = '';
 			ulClass='node-children nested'
 		}
-
-		console.log('renderTreeParams',nodes,styleAttr,inverted, nested);
 
 		let html = `<ul class="${ulClass} ${invertedTextColor}" style="${styleAttr}" id="children-${dataId}">`;
 		// Ordner zuerst, dann Dateien, beide alphabetisch sortiert
@@ -74,9 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
 				openclass = 'open';
 			}
 			html += `<li class="node ${node.type}" data-id="${node.fileid}">`;
-			html += `<span class="${invertedTextColor} ${openclass}" data-path="${node.fileid}" data-url="${node.url}" data-id="${node.fileid}">${node.name}</span>`;
+			html += `<span class="${invertedTextColor} ${openclass}" data-path="${node.fileid}" data-url="${folderLink}/download?path=${node.filepath}&files=${node.filename}" data-id="${node.fileid}">${node.name}</span>`;
 			if (node.children) {
-				html += renderTree(node.children,styleAttr,inverted, true,node.fileid); // Rekursive Funktion zum Erstellen des Baums
+				html += renderTree(node.children,folderLink,styleAttr,inverted, true,node.fileid); // Rekursive Funktion zum Erstellen des Baums
 			}
 			html += '</li>';
 		});
@@ -116,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				const inverted = Element.firstChild.firstChild.classList.contains('inverted-text-color');
 				let treeHTML;
 
-				treeHTML = renderTree(treeData.children,styleAttr,inverted,false); // Nutzt die neue renderTree-Funktion
+				treeHTML = renderTree(treeData.children,folderLink,styleAttr,inverted,false); // Nutzt die neue renderTree-Funktion
 				Element.firstChild.innerHTML = treeHTML; // Setzt das HTML direkt
 				setTimeout(()=>wp_block_create_block_nextcloud_block_plugin_init(), 500);
 

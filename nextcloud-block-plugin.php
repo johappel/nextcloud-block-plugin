@@ -3,7 +3,7 @@
  * Plugin Name: Nextcloud Block Plugin
  * Plugin URI: https://github.com/johappel/nextcloud-block-plugin
  * Description: Integrate Nextcloud directories as blocks in WordPress and display them as a tree structure.
- * Version: 0.0.2
+ * Version: 0.0.3
  * Author: Joachim Happel
  * Author URI: https://comenius.de/person/joachim-happel/
  * License: GPLv2 or later
